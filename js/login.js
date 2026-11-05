@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnText       = document.getElementById('btnText');
     const btnSpinner    = document.getElementById('btnSpinner');
 
-    /* Si ya hay sesión, ir al dashboard */
     if (sessionStorage.getItem('user') || localStorage.getItem('user')) {
         window.location.href = './dashboard.html';
         return;
@@ -47,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return isValid;
     }
 
-    /* Credenciales de prueba */
+    /* Botones de prueba */
     document.querySelectorAll('.credential-card').forEach(card => {
         card.style.cursor = 'pointer';
         card.addEventListener('click', () => {
@@ -57,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    /* Submit */
     loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 
@@ -81,6 +79,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (ok) {
                 const nombre = extraerNombre(data.mensaje) || email;
+
+                /* 🔥 LOG DEL TOKEN EN EL NAVEGADOR */
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    
+                    console.group('🔐 INFORMACIÓN DEL TOKEN');
+                    console.log('✅ Token guardado en localStorage');
+                    console.log('🎫 Token completo:', data.token);
+                    console.log('💡 Tip: Copiá y pegá este token en jwt.io para ver su interior.');
+                    console.groupEnd();
+                }
 
                 await Swal.fire({
                     icon: 'success',

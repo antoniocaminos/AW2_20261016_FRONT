@@ -73,7 +73,7 @@ function renderTabla() {
     } else {
         tbody.innerHTML = lista.map(u => `
             <tr>
-                <td><span class="badge bg-light text-dark">#${u.id}</span></td>
+                <td><span class="badge bg-light text-dark">#${u._id.slice(-4)}</span></td>
                 <td class="fw-semibold">${escapeHtml(u.nombre)}</td>
                 <td class="d-none d-md-table-cell">${u.edad}</td>
                 <td class="d-none d-lg-table-cell">${escapeHtml(u.ocupacion)}</td>
@@ -81,11 +81,11 @@ function renderTabla() {
                 <td class="text-muted small">${escapeHtml(u.email)}</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-primary me-1"
-                            data-accion="editar" data-id="${u.id}">
+                            data-accion="editar" data-id="${u._id}">
                         <i class="fas fa-pen"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger"
-                            data-accion="eliminar" data-id="${u.id}">
+                            data-accion="eliminar" data-id="${u._id}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -111,7 +111,7 @@ function renderKPIs() {
 tbody.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-accion]');
     if (!btn) return;
-    const id = Number(btn.dataset.id);
+    const id = btn.dataset.id; // Ahora es string, no Number()
     if (btn.dataset.accion === 'editar')   abrirModalEditar(id);
     if (btn.dataset.accion === 'eliminar') eliminarUsuario(id);
 });
@@ -127,10 +127,10 @@ function abrirModalCrear() {
 }
 
 function abrirModalEditar(id) {
-    const u = usuarios.find(x => x.id === id);
+    const u = usuarios.find(x => x._id === id); // Buscamos por _id
     if (!u) return;
-    modalTitulo.textContent   = `Editar usuario #${u.id}`;
-    inputs.id.value           = u.id;
+    modalTitulo.textContent   = `Editar usuario #${id.slice(-4)}`;
+    inputs.id.value           = u._id;
     inputs.nombre.value       = u.nombre;
     inputs.edad.value         = u.edad;
     inputs.ocupacion.value    = u.ocupacion;
@@ -165,7 +165,7 @@ formUsuario.addEventListener('submit', async (e) => {
 
     try {
         const { ok, data } = id
-            ? await api.actualizar(Number(id), datos)
+            ? await api.actualizar(id, datos) // Mandamos el _id directo
             : await api.crear(datos);
 
         if (!ok) {
@@ -194,7 +194,7 @@ formUsuario.addEventListener('submit', async (e) => {
 
 /* Eliminar */
 async function eliminarUsuario(id) {
-    const u = usuarios.find(x => x.id === id);
+    const u = usuarios.find(x => x._id === id); // Buscamos por _id
     if (!u) return;
 
     const confirm = await Swal.fire({
@@ -235,6 +235,7 @@ logoutBtn.addEventListener('click', async () => {
     if (r.isConfirmed) {
         sessionStorage.removeItem('user');
         localStorage.removeItem('user');
+        localStorage.removeItem('token'); // Limpiamos el token también
         window.location.href = './login.html';
     }
 });

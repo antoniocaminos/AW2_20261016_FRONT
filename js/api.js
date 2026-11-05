@@ -1,10 +1,5 @@
 /* ============================================================
    API_URL
-   ------------------------------------------------------------
-   En MULTI REPO el front vive en otro puerto distinto al backend.
-   El front NO puede usar rutas relativas como '/usuarios' porque
-   esas rutas se resolverian contra el puerto del front, no del back.
-   Por eso apuntamos con URL ABSOLUTA al backend.
    ============================================================ */
 export const API_URL = 'http://localhost:3000/usuarios';
 
@@ -12,12 +7,11 @@ console.log('🔌 API_URL =', API_URL);
 
 /* ============================================================
    Wrapper fetch
-   ------------------------------------------------------------
-   Centralizamos todas las peticiones aca.
-   Ventaja: si mañana cambia la URL del backend (deploy, dominio,
-   puerto), se cambia en UN SOLO LUGAR.
    ============================================================ */
 async function request(method, url, body) {
+    // 🔥 1. Buscamos el token en el localStorage
+    const token = localStorage.getItem('token');
+
     const opciones = {
         method,
         headers: {
@@ -25,17 +19,35 @@ async function request(method, url, body) {
             'Accept':       'application/json'
         }
     };
+
+    // 🔥 2. Si hay token, lo inyectamos en el Header
+    if (token) {
+        opciones.headers['Authorization'] = `Bearer ${token}`;
+        console.log(`📡 Enviando petición ${method} a ${url} CON token`);
+    } else {
+        console.warn(`⚠️ Petición ${method} a ${url} SIN token (ruta pública)`);
+    }
+
     if (body !== undefined) opciones.body = JSON.stringify(body);
 
     const res  = await fetch(url, opciones);
-    const data = await res.json().catch(() => ({}));  ///// si no es JSON valido, devolvemos {}
+    
+    // 🔥 3. Si el backend dice "no autorizado", cerramos sesión y volvemos al login
+    if (res.status === 401 || res.status === 403) {
+        console.warn(`🚨 Token inválido o vencido (Error ${res.status}). Redirigiendo...`);
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        if (!window.location.pathname.includes('login.html')) {
+            window.location.href = './login.html';
+        }
+    }
+
+    const data = await res.json().catch(() => ({}));
     return { ok: res.ok, status: res.status, data };
 }
 
 /* ============================================================
    Endpoints
-   ------------------------------------------------------------
-   Cada metodo del front se mapea 1 a 1 con una ruta del backend.
    ============================================================ */
 export const api = {
     login:      (email, pass) => request('POST',   `${API_URL}/login`, { email, pass }),
